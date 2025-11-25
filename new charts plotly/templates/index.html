@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+
+    <meta charset="UTF-8">
+    <title>DLP Dashboard</title>
+    
+    <link rel="icon" type="image/png" href="data:image/png;base64,{{ favicon_base64 }}">
+    <style>
+
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f9f9f9;
+        }
+
+        
+
+        /* Main Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #007bff;
+            padding: 0 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 14px 10px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .navbar .nav-links a:hover,
+        .navbar .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+        }
+
+        .navbar .download-button {
+            background-color: #28a745;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+            transition: background-color 0.3s ease;
+        }
+
+        .navbar .download-button:hover {
+            background-color: #218838;
+        }
+
+        /* Page header */
+        h1 {
+            text-align: center;
+            margin-top: 30px;
+            color: #333;
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+            margin: 40px auto;
+            max-width: 1200px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Chart + Note wrapper */
+        .chart-note-wrapper {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        /* Chart container */
+        .chart-note-wrapper .chart-container {
+            position: relative;
+            flex: 1;
+            min-width: 558px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 3px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-container .chart-info {
+         /* position relative to chart-container */
+        top: 8px;           /* distance from top */
+        left: 8px;          /* distance from left */
+        font-size: 22px;
+        cursor: pointer;
+        color: #007bff;     /* icon color */
+        }
+
+        .chart-container .chart-info:hover {
+        color: #0056b3;     /* hover color */
+        }
+
+
+      
+
+
+
+        /* Flex row for side-by-side charts */
+        .chart-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap; /* responsive wrap on small screens */
+        }
+
+        /* Sub-tab navbar for incident types */
+        .sub-tab-nav {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .sub-tab-nav button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sub-tab-nav button.active {
+            background-color: #0056b3;
+        }
+
+        .sub-tab-nav button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Hide type charts by default */
+        .type-charts {
+            display: none;
+        }
+
+        /* Show active type chart */
+        .type-charts.active {
+            display: block;
+        }
+
+        .chart-info-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.chart-info {
+  font-size: 22px;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.chart-info-wrapper:hover .chart-tooltip {
+  display: block;
+}
+
+.chart-tooltip {
+  display: none;
+  position: absolute;
+  top: 25px;
+  left: 0;
+  background-color: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 1000;
+  width: 300px;
+  white-space: normal;
+}
+
+.chart-tooltip ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.page-title-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px; /* spacing between title and info icon */
+  margin-top: 30px;
+  color: #333;
+}
+
+.page-title-wrapper h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* Loader overlay (covers entire screen) */
+#loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.7); /* semi-transparent white overlay */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+/* Spinner animation */
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #007bff; /* blue to match your navbar theme */
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+/* Spin keyframes */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loader text */
+#loader p {
+  margin-top: 15px;
+  font-size: 18px;
+  color: #333;
+  font-weight: bold;
+}
+
+
+
+  
+    </style>
+</head>
+<body>
+  <!-- Loader Overlay -->
+<div id="loader">
+  <div class="spinner"></div>
+  <p>Loading Dashboard...</p>
+</div>
+
+    <!-- Main Navbar -->
+    <div class="navbar">
+        <div class="nav-links">
+            <a onclick="showTab('tab0')" class="active">DLP Trends</a>
+            <a onclick="showTab('tab1')">Block Chart(all Policies)</a>
+            <a onclick="showTab('tab2')">PII Block Chart</a>
+            <a onclick="showTab('tab3')">Compliance ID pass Chart</a>
+            <a onclick="showTab('tab4')">Exempted Users pass Chart</a>
+            <a onclick="showTab('tab5')">Health & Motor Renewal pass Chart</a>
+            <a onclick="showTab('tab6')">User Justifications</a>
+            
+            
+        </div>
+        {% if showdownloadbutton==True %}
+        <a href="{{ url_for('download_dashboard') }}" class="download-button">⬇ Download</a>
+        {% endif %}
+
+    </div>
+
+
+<!-- ================= TAB 0 ================= -->
+<div id="tab0" class="tab-content active">
+  <div class="page-title-wrapper">
+  <h1>DLP Trends</h1>
+  <div class="chart-info-wrapper">
+    <span class="chart-info">&#128712</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>This page shows DLP incident trends over time.</li>
+        <li>Hover on any chart for specific details.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  {% for chart_key in ['Combined_Trend','Monthly_trend', 'Monthly_Networktrend', 'Monthly_Endpointtrend','Monthly_Severity_Table'] %}
+    <div class="chart-note-wrapper">
+      <div class="chart-container">
+        <div class="chart-info-wrapper">
+          <span class="chart-info">ℹ️</span>
+          <div class="chart-tooltip">
+            {{ DLP_trends[chart_key].note|safe }}
+          </div>
+        </div>
+        {{ DLP_trends[chart_key].html|safe }}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- ================= TAB 1 ================= -->
+<div id="tab1" class="tab-content active">
+  <div class="page-title-wrapper">
+  <h1>Block Report (ALL Policies)</h1>
+  <div class="chart-info-wrapper">
+    <span class="chart-info">&#128712</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>Shows all policies and their respective trigger counts.</li>
+        <li>Includes data from both endpoint and network sources.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Overall charts with notes -->
+  <div class="chart-row">
+    {% for chart_key in ['overall_block_type_pie', 'overall_block_location_pie'] %}
+      <div class="chart-note-wrapper">
+        <div class="chart-container">
+          <div class="chart-info-wrapper">
+            <span class="chart-info">ℹ️</span>
+            <div class="chart-tooltip">
+              {{ generic_block_charts[chart_key].note|safe }}
+            </div>
+          </div>
+          {{ generic_block_charts[chart_key].html|safe }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="chart-note-wrapper">
+    <div class="chart-container">
+      <div class="chart-info-wrapper">
+        <span class="chart-info">ℹ️</span>
+        <div class="chart-tooltip">
+          {{ generic_block_charts['overall_Policies_triggered'].note|safe }}
+        </div>
+      </div>
+      {{ generic_block_charts['overall_Policies_triggered'].html|safe }}
+    </div>
+  </div>
+
+  <!-- Sub-tab Navbar -->
+  <div class="sub-tab-nav">
+    {% for type in charts_by_blocktype.keys() %}
+      <button class="sub-tab-btn" data-type="{{ type }}">{{ type }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- Charts for each type -->
+  {% for type, type_charts in charts_by_blocktype.items() %}
+    <div class="type-charts" id="{{ type }}_charts">
+      {% for chart in type_charts %}
+        <div class="chart-note-wrapper">
+          <div class="chart-container">
+            <div class="chart-info-wrapper">
+              <span class="chart-info">ℹ️</span>
+              <div class="chart-tooltip">{{ chart.note|safe }}</div>
+            </div>
+            {{ chart.html|safe }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+<!-- ================= TAB 2 ================= -->
+<div id="tab2" class="tab-content active">
+  <div class="page-title-wrapper">
+  <h1> PII Block Report</h1>
+  <div class="chart-info-wrapper">
+    <span class="chart-info">&#128712</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>Shows trigger counts for PII Policy and PII (2) Policy</li>
+        <li>Includes data from both endpoint and network sources.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  <!-- Overall charts with notes (side by side) -->
+  <div class="chart-row">
+    {% for chart_key in ['overall_block_type_pie', 'overall_block_location_pie'] %}
+      <div class="chart-note-wrapper">
+        <div class="chart-container">
+          <div class="chart-info-wrapper">
+            <span class="chart-info">ℹ️</span>
+            <div class="chart-tooltip">
+              {{ generic_PIIblock_charts[chart_key].note|safe }}
+            </div>
+          </div>
+          {{ generic_PIIblock_charts[chart_key].html|safe }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="chart-note-wrapper">
+    <div class="chart-container">
+      <div class="chart-info-wrapper">
+        <span class="chart-info">ℹ️</span>
+        <div class="chart-tooltip">
+          {{ generic_PIIblock_charts['overall_Policies_triggered'].note|safe }}
+        </div>
+      </div>
+      {{ generic_PIIblock_charts['overall_Policies_triggered'].html|safe }}
+    </div>
+  </div>
+
+  <!-- Sub-tab Navbar -->
+  <div class="sub-tab-nav">
+    {% for type in charts_by_PIIblocktype.keys() %}
+      <button class="sub-tab-btn" data-type="{{ type }}">{{ type }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- Charts for each type -->
+  {% for type, type_charts in charts_by_PIIblocktype.items() %}
+    <div class="type-charts" id="{{ type }}_charts">
+      {% for chart in type_charts %}
+        <div class="chart-note-wrapper">
+          <div class="chart-container">
+            <div class="chart-info-wrapper">
+              <span class="chart-info">ℹ️</span>
+              <div class="chart-tooltip">{{ chart.note|safe }}</div>
+            </div>
+            {{ chart.html|safe }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+<!-- ================= TAB 3 ================= -->
+<div id="tab3" class="tab-content active">
+  
+
+  <div class="page-title-wrapper">
+  <h1>Compliance ID Pass Chart</h1>
+  <div class="chart-info-wrapper">
+    <span class="chart-info">&#128712</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>ALL THIS DATA WAS ALLOWED TO PASS BECAUSE USERS MADE USE OF THE COMPLIANCE ID,
+BUT WAS MONITORED BY DLP.</li>
+        <li>COMPLIANCE ID DOESN’T WORK FOR PII POLICY , RENEWAL POLICY (2) ,ENCRYPTED DATA
+POLICY and HEALTH RENWAL POLICY WHICH REQUIRE EXEMPTIONS.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  <!-- Overall charts with notes (side by side) -->
+  <div class="chart-row">
+    {% for chart_key in ['overall_block_type_pie', 'overall_block_location_pie'] %}
+      <div class="chart-note-wrapper">
+        <div class="chart-container">
+          <div class="chart-info-wrapper">
+            <span class="chart-info">ℹ️</span>
+            <div class="chart-tooltip">
+              {{ complianceid_generic_chart[chart_key].note|safe }}
+            </div>
+          </div>
+          {{ complianceid_generic_chart[chart_key].html|safe }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="chart-note-wrapper">
+    <div class="chart-container">
+      <div class="chart-info-wrapper">
+        <span class="chart-info">ℹ️</span>
+        <div class="chart-tooltip">
+          {{ complianceid_generic_chart['overall_Policies_triggered'].note|safe }}
+        </div>
+      </div>
+      {{ complianceid_generic_chart['overall_Policies_triggered'].html|safe }}
+    </div>
+  </div>
+
+  <!-- Sub-tab Navbar -->
+  <div class="sub-tab-nav">
+    {% for type in complianceid_pass_data_chart.keys() %}
+      <button class="sub-tab-btn" data-type="{{ type }}">{{ type }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- Charts for each type -->
+  {% for type, type_charts in complianceid_pass_data_chart.items() %}
+    <div class="type-charts" id="{{ type }}_charts">
+      {% for chart in type_charts %}
+        <div class="chart-note-wrapper">
+          <div class="chart-container">
+            <div class="chart-info-wrapper">
+              <span class="chart-info">ℹ️</span>
+              <div class="chart-tooltip">{{ chart.note|safe }}</div>
+            </div>
+            {{ chart.html|safe }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+ 
+
+<!-- ================= TAB 4 ================= -->
+<div id="tab4" class="tab-content active">
+  
+  <div class="page-title-wrapper">
+    <h1>Exempted Users Pass Chart</h1>  
+  <div class="chart-info-wrapper">
+    <span class="chart-info">&#128712</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>NOTE- ALL THIS DATA WAS ALLOWED TO PASS BECAUSE OF EXCEPTIONS GIVEN TO USERS, BUT WAS
+MONITORED BY DLP.</li>
+        <li>POLICIES WHICH REQUIRE EXEMPTIONS ARE-
+PI POLICY AND PII POLICY (2),
+RENEWAL POLICY,
+ENCRYPTED DATA POLICY,
+HEALTH RENWAL POLICY.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Small summary table for Sender & Recipient Exceptions -->
+<div class="chart-container" style="max-width: 400px; margin: 0 auto; text-align: center; margin-top: 15px;">
+  <div class="chart-info-wrapper" style="float: right;">
+    <span class="chart-info">ℹ️</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>Total number of Sender and Recipient exceptions existing when the chart was created.</li>
+        
+      </ul>
+    </div>
+  </div>
+
+  <table style="width:100%; border-collapse: collapse; font-size: 16px;">
+    <tr style="background-color: #007bff; color: white;">
+      <th style="padding: 10px;">Exception Type</th>
+      <th style="padding: 10px;">Count</th>
+    </tr>
+    <tr style="background-color: #f2f2f2;">
+      <td style="padding: 10px;">Sender Exceptions</td>
+      <td style="padding: 10px;">{{ exception_summary.sender }}</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px;">Recipient Exceptions</td>
+      <td style="padding: 10px;">{{ exception_summary.recipient }}</td>
+    </tr>
+  </table>
+</div>
+
+  
+
+  <!-- Overall charts with notes (side by side) -->
+  <div class="chart-row">
+    {% for chart_key in ['overall_block_type_pie', 'overall_block_location_pie'] %}
+      <div class="chart-note-wrapper">
+        <div class="chart-container">
+          <div class="chart-info-wrapper">
+            <span class="chart-info">ℹ️</span>
+            <div class="chart-tooltip">
+              {{ exemptedusers_generic_chart[chart_key].note|safe }}
+            </div>
+          </div>
+          {{ exemptedusers_generic_chart[chart_key].html|safe }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="chart-note-wrapper">
+    <div class="chart-container">
+      <div class="chart-info-wrapper">
+        <span class="chart-info">ℹ️</span>
+        <div class="chart-tooltip">
+          {{ exemptedusers_generic_chart['overall_Policies_triggered'].note|safe }}
+        </div>
+      </div>
+      {{ exemptedusers_generic_chart['overall_Policies_triggered'].html|safe }}
+    </div>
+  </div>
+
+  <!-- Sub-tab Navbar -->
+  <div class="sub-tab-nav">
+    {% for type in exemptedusers_pass_data_chart.keys() %}
+      <button class="sub-tab-btn" data-type="{{ type }}">{{ type }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- Charts for each type with notes -->
+  {% for type, type_charts in exemptedusers_pass_data_chart.items() %}
+    <div class="type-charts" id="{{ type }}_charts">
+      {% for chart in type_charts %}
+        <div class="chart-note-wrapper">
+          <div class="chart-container">
+            <div class="chart-info-wrapper">
+              <span class="chart-info">ℹ️</span>
+              <div class="chart-tooltip">
+                {{ chart.note|safe }}
+              </div>
+            </div>
+            {{ chart.html|safe }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+<!-- ================= TAB 5 ================= -->
+<div id="tab5" class="tab-content active">
+  
+  <div class="page-title-wrapper">
+    <h1>Health & Motor Renewal Pass Chart</h1>  
+  <div class="chart-info-wrapper">
+    <span class="chart-info">&#128712</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>Incase of Health Renewal Policy the pass threshold is just 1 attachment.</li>
+        <li>Incase of Motor Renewal Policy it only has a monitor policy hence no block threshold here.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+  <!-- Overall charts with notes (side by side) -->
+  <div class="chart-row">
+    {% for chart_key in ['overall_block_type_pie', 'overall_block_location_pie'] %}
+      <div class="chart-note-wrapper">
+        <div class="chart-container">
+          <div class="chart-info-wrapper">
+            <span class="chart-info">ℹ️</span>
+            <div class="chart-tooltip">
+              {{ healthrenewal_generic_chart[chart_key].note|safe }}
+            </div>
+          </div>
+          {{ healthrenewal_generic_chart[chart_key].html|safe }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="chart-note-wrapper">
+    <div class="chart-container">
+      <div class="chart-info-wrapper">
+        <span class="chart-info">ℹ️</span>
+        <div class="chart-tooltip">
+          {{ healthrenewal_generic_chart['overall_Policies_triggered'].note|safe }}
+        </div>
+      </div>
+      {{ healthrenewal_generic_chart['overall_Policies_triggered'].html|safe }}
+    </div>
+  </div>
+
+  <!-- Sub-tab Navbar -->
+  <div class="sub-tab-nav">
+    {% for type in healthrenewal_pass_data_chart.keys() %}
+      <button class="sub-tab-btn" data-type="{{ type }}">{{ type }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- Charts for each type with notes -->
+  {% for type, type_charts in healthrenewal_pass_data_chart.items() %}
+    <div class="type-charts" id="{{ type }}_charts">
+      {% for chart in type_charts %}
+        <div class="chart-note-wrapper">
+          <div class="chart-container">
+            <div class="chart-info-wrapper">
+              <span class="chart-info">ℹ️</span>
+              <div class="chart-tooltip">
+                {{ chart.note|safe }}
+              </div>
+            </div>
+            {{ chart.html|safe }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+<!-- ================= TAB 6 ================= -->
+<div id="tab6" class="tab-content active">
+  <div class="page-title-wrapper">
+  <h1>User Justifications</h1>
+  <div class="chart-info-wrapper">
+    <span class="chart-info">&#128712</span>
+    <div class="chart-tooltip">
+      <ul>
+        <li>This page shows incident info and justifications of users that caused these incidents.</li>        
+      </ul>
+    </div>
+  </div>
+</div>
+
+  {% for chart_key in ['User_Justification_Table'] %}
+    <div class="chart-note-wrapper">
+      <div class="chart-container">
+        <div class="chart-info-wrapper">
+          <span class="chart-info">ℹ️</span>
+          <div class="chart-tooltip">
+            {{ justification_chart[chart_key].note|safe }}
+          </div>
+        </div>
+        {{ justification_chart[chart_key].html|safe }}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+
+    
+    
+
+    </div>
+    <!-- JavaScript -->
+    <script>
+
+      // Wait for the full page (including charts) to load
+      // loader animation
+  window.addEventListener("load", function() {
+    const loader = document.getElementById("loader");
+    if (loader) {
+      loader.style.opacity = "0";
+      loader.style.transition = "opacity 0.5s ease";
+      setTimeout(() => loader.style.display = "none", 500);
+    }
+  });
+
+        // temporary fix below as plotly doesnt renders the sizing correctly 
+        // for hidden charts like we want side by side for the generic charts you bydefault make the charts ypu require side by side as active when declatring them 
+        // and in the code below you turn off the active thing so double charts dont appear 
+        document.getElementById('tab1').classList.remove('active');
+        document.getElementById('tab2').classList.remove('active');
+        document.getElementById('tab3').classList.remove('active');
+        document.getElementById('tab4').classList.remove('active');
+        document.getElementById('tab5').classList.remove('active');
+        document.getElementById('tab6').classList.remove('active');
+        
+        
+
+
+        
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+
+         
+    
+        }
+
+   
+
+        document.addEventListener('DOMContentLoaded', () => {
+    const subTabButtons = document.querySelectorAll('.sub-tab-btn');
+
+    subTabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const parentTab = this.closest('.tab-content');
+            if (!parentTab) return;
+
+            // Reset active states
+            parentTab.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+            parentTab.querySelectorAll('.type-charts').forEach(tc => tc.classList.remove('active'));
+
+            this.classList.add('active');
+
+            const type = this.dataset.type;
+
+            // Replace spaces with underscores for cleaner matching the below steps needed because some types like application file access have gaps in them that wont work for id selector,
+            const safeType = type.replace(/\s+/g, '_');
+
+            // Escape special characters (/, ., :, etc.) necessary because some types like http/https has a / in them which is not permitted as it is a css character
+            const escapedSafeType = CSS.escape(`${safeType}_charts`);
+            const escapedOriginalType = CSS.escape(`${type}_charts`);
+
+            // Try both ID formats (underscore or original)
+            let chartDiv =
+                parentTab.querySelector(`#${escapedSafeType}`) ||
+                parentTab.querySelector(`#${escapedOriginalType}`);
+
+            if (chartDiv) chartDiv.classList.add('active');
+        });
+    });
+});
+
+
+    </script>
+</body>
+</html>
